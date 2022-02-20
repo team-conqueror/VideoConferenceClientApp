@@ -1,0 +1,34 @@
+.formReg{
+  border-left: none;
+  border-top: none;
+  border-right: none;
+  border-radius: 0;
+  border-bottom: 1px solid black;
+  padding: 0;
+}
+.regBut{
+  width: 100%;
+  background-color: blueviolet;
+}
+
+.successMessage{
+  position: absolute;
+  top:30%;
+  left:25%;
+  width: 50%;
+  height: 20%;
+  background-color: #66ff73;
+  border-radius: 10px;
+}
+
+.btnCls{
+  padding: 0 5px;
+  margin: 5px;
+  border-radius: 2px;
+  background-color: red;
+}
+
+.message{
+  color:#282c34;
+}
+
