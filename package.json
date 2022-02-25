@@ -5,8 +5,11 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "node index.js",
-		"dev": "nodemon index.js"
-	},
+		"dev": "nodemon index.js",
+        "build": "./node_modules/babel-cli/bin/babel.js src --out-dir lib --plugins transform-react-jsx --presets es2015",
+        "bundle": "./node_modules/browserify/bin/cmd.js lib/client.js -o public/js/bundle.js",
+        "start": "npm run build && npm run bundle && node lib/server.js"
+    },
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
@@ -16,5 +19,6 @@
 		"nodemon": "^2.0.7",
 		"serve": "^11.3.2",
 		"socket.io": "^4.0.0"
+
 	}
 }

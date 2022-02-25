@@ -1,14 +1,49 @@
-import React, { createContext, useState, useRef, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import React, {createContext, useEffect, useRef, useState} from 'react';
+import {io} from 'socket.io-client';
 import Peer from 'simple-peer';
-import { notification } from 'antd';
-import { parse } from 'querystring';
+import {notification} from 'antd';
+import {getUserRole} from "./utils/user";
 
 const SocketContext = createContext();
 
-const socket = io('http://0.0.0.0:8082', {
-  query: { id: sessionStorage.getItem('id') },
-});
+async function getUserByToken() {
+  const cookies = document.cookie;
+
+  const cookiesArray = cookies.split('; ');
+
+  let token = null;
+  cookiesArray.forEach((cookie) => {
+    const [name, value] = cookie.split('=');
+    if (name === 'token') {
+      token = value;
+    }
+  });
+  try {
+    const response = await fetch('http://3.84.20.224:5000/userDtl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        token,
+      }),
+    });
+
+    if (response.ok) {
+      const { user } = await response.json();
+      return user.user;
+    }
+    throw new Error('Failed to fetch user ID');
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// let socket = io('http://0.0.0.0:8082', {
+//   query: { id: sessionStorage.getItem('id') },
+// });
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
@@ -21,6 +56,20 @@ const ContextProvider = ({ children }) => {
   const [isAudioEnable, setIsAudioEnable] = useState(true);
   const [result, setResult] = useState('');
   const [userId, setUserId] = useState('');
+  const [user, setUser] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [role, setRole] = useState(null);
+
+  useEffect(() => {
+    getUserByToken().then((user) => {
+      const newSocket = io('http://3.228.220.143:8082/', {
+        query: { id: user._id },
+      });
+      setUser(user);
+      setRole(getUserRole(user.role));
+      setSocket(newSocket);
+    });
+  }, []);
 
   const [api, contextHolder] = notification.useNotification();
 
@@ -29,8 +78,6 @@ const ContextProvider = ({ children }) => {
   const connectionRef = useRef();
   const canvasRef = useRef();
   const imageRef = useRef();
-
-  const currentRole = sessionStorage.getItem('role');
 
   const openNotificationWithIcon = (type, title, msg) => {
     api[type]({
@@ -47,27 +94,27 @@ const ContextProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const id = sessionStorage.getItem('id');
-    setUserId(id);
-    console.log(me);
-  }, [me]);
+    console.log(socket);
+    if (socket) {
+      if ((isVideoEnable || isAudioEnable) && role === 'student') {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+          .then((currentStream) => {
+            setStream(currentStream);
+
+            myVideo.current.srcObject = currentStream;
+          });
+      }
+      socket.on('me', (id) => setMe(id));
+
+      socket.on('callUser', ({ from, name: callerName, signal }) => {
+        setCall({ isReceivingCall: true, from, name: callerName, signal });
+      });
+    }
+  }, [socket, role]);
 
   useEffect(() => {
-    console.log(isAudioEnable, isVideoEnable);
-    if ((isVideoEnable || isAudioEnable) && currentRole === 'student') {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then((currentStream) => {
-          setStream(currentStream);
-
-          myVideo.current.srcObject = currentStream;
-        });
-    }
-    socket.on('me', (id) => setMe(id));
-
-    socket.on('callUser', ({ from, name: callerName, signal }) => {
-      setCall({ isReceivingCall: true, from, name: callerName, signal });
-    });
-  }, []);
+    console.log(me);
+  }, [me]);
 
   // useEffect(() => {
   //   switch (result) {
@@ -88,13 +135,13 @@ const ContextProvider = ({ children }) => {
   const showWarning = (text) => {
     switch (text) {
       case 'RIGHT':
-        openNotificationWithIcon('error', 'Strange Behaviour Detected 👉', "Please look forward, currently you're looking at right");
+        openNotificationWithIcon('error', 'Strange Behaviour Detected 👉', 'Candidate is currently looking at right');
         break;
       case 'LEFT':
-        openNotificationWithIcon('error', 'Strange Behaviour Detected 👈', "Please look forward, currently you're looking at left");
+        openNotificationWithIcon('error', 'Strange Behaviour Detected 👈', 'Candidate is currently looking at left');
         break;
       case 'NO_FACE_DETECTED':
-        openNotificationWithIcon('error', 'No Any Face Detected 🫣', "You're moving away, Please stay in the frame");
+        openNotificationWithIcon('error', 'No Any Face Detected 🫣', 'Candidate is not in the frame');
         break;
       default:
         break;
@@ -116,13 +163,13 @@ const ContextProvider = ({ children }) => {
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (currentRole === 'teacher' && userVideo.current !== undefined) {
+      if (role === 'teacher' && userVideo.current !== undefined) {
         captureImageFromCamera();
 
         if (imageRef.current) {
           const formData = new FormData();
           formData.append('image', imageRef.current);
-          const response = await fetch('http://0.0.0.0:5000/angle', {
+          const response = await fetch('http://34.206.39.5:8080/classify', {
             method: 'POST',
             body: formData,
           });
@@ -138,7 +185,7 @@ const ContextProvider = ({ children }) => {
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [name]);
+  }, [name, role]);
 
   const answerCall = () => {
     setCallAccepted(true);
@@ -199,6 +246,7 @@ const ContextProvider = ({ children }) => {
       setName,
       callEnded,
       me,
+      user,
       callUser,
       leaveCall,
       answerCall,
@@ -208,6 +256,7 @@ const ContextProvider = ({ children }) => {
       isAudioEnable,
       setIsAudioEnable,
       setIsVideoEnable,
+      role,
     }}
     >
       {children}

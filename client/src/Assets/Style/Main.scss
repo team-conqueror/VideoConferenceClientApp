@@ -1,7 +1,13 @@
 @import "~bootstrap/scss/bootstrap";
-@import "Variables/colors";
 @import "Variables/fonts";
 @import "Header/header";
 @import "userAut";
-@import "home";
-@import "profile";
+
+.loading{
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

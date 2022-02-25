@@ -17,7 +17,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   gridContainer: {
-    justifyContent: 'center',
+    justifyContent: 'end',
     [theme.breakpoints.down('xs')]: {
       flexDirection: 'column',
     },
@@ -29,13 +29,12 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const VideoPlayer = () => {
-  const { name, callAccepted, myVideo, userVideo, callEnded, stream, call, canvasRef, me, isVideoEnable, isAudioEnable, setIsAudioEnable, setIsVideoEnable } = useContext(SocketContext);
+  const { role, callAccepted, myVideo, userVideo, callEnded, stream, call, canvasRef, me, isVideoEnable, isAudioEnable, setIsAudioEnable, setIsVideoEnable } = useContext(SocketContext);
   const classes = useStyles();
-  const currentRole = sessionStorage.getItem('role');
 
   return (
     <Grid container className={classes.gridContainer}>
-      {stream && currentRole === 'student' && (
+      {stream && role === 'student' && (
         <Card
           hoverable
           style={{ marginTop: 50, padding: 0, width: 550, height: 475, marginRight: 10 }}
@@ -45,15 +44,15 @@ const VideoPlayer = () => {
             </Grid>
               )}
           actions={[
-            <Camera color={isVideoEnable ? 'info' : 'error'} onClick={() => setIsVideoEnable(!isVideoEnable)} />,
-            <MicOff color={isAudioEnable ? 'info' : 'error'} key="edit" onClick={() => setIsAudioEnable(!isAudioEnable)} />,
+            <Camera onClick={() => setIsVideoEnable(!isVideoEnable)} />,
+            <MicOff key="edit" onClick={() => setIsAudioEnable(!isAudioEnable)} />,
             <CopyToClipboard text={me}>
               <Assignment />
             </CopyToClipboard>,
           ]}
         />
       )}
-      {callAccepted && !callEnded && currentRole !== 'student' && (
+      {callAccepted && !callEnded && role !== 'student' && (
         <Card
           hoverable
           style={{ marginTop: 50, padding: 0, width: 550, height: 475, marginLeft: 10 }}

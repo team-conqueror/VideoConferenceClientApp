@@ -4,7 +4,7 @@ import {Modal} from 'antd';
 import {SocketContext} from '../Context';
 
 const Notifications = () => {
-  const { answerCall, call, callAccepted } = useContext(SocketContext);
+  const { answerCall, call, callAccepted, user } = useContext(SocketContext);
 
   const [isModalOpen, setIsModalOpen] = useState(true);
 
@@ -20,7 +20,7 @@ const Notifications = () => {
     <>
       {call.isReceivingCall && !callAccepted && (
         <Modal title="Request for join room" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-          <p>{call.from} request permission to join to the room</p>
+          <p>{user.name} request permission to join to the room</p>
         </Modal>
       )}
     </>

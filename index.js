@@ -19,14 +19,16 @@ app.get('/', (req, res) => {
 
 io.on("connection", (socket) => {
 	const customId = socket.handshake.query.id;
+	console.log(customId)
 	socket.join(customId); // join the room using the custom ID
 	socket.emit("me", customId);
-
 	socket.on("disconnect", () => {
 		socket.broadcast.to(customId).emit("callEnded"); // send to users in the same room
 	});
 
 	socket.on("callUser", ({ userToCall, signalData, from, name }) => {
+		console.log(userToCall)
+		console.log(from)
 		io.to(userToCall).emit("callUser", { signal: signalData, from, name });
 	});
 
